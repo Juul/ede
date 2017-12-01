@@ -1,14 +1,8 @@
 #!/bin/bash
 
-# ToDo
-# 
-# * make it work for non-rsa keys
-# * support encrypting multiple files at once
-# * add support for other pubkey sources than github
-
 
 if [ "$#" -ne "2" ]; then
-  echo "Usage: $0 <ssh_pubkey_file or github_username> <file_or_dir_to_encrypt>" >&2
+  echo "Usage: ede <ssh_pubkey_file or github_username> <file_or_dir_to_encrypt>" >&2
   exit 1
 fi
 

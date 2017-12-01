@@ -29,3 +29,14 @@ tar xvzf mydir.encrypted.tar.gz # extract file
 # this results in the directory ./mydir/
 less mydir/README # follow readme instructions
 ```
+
+# ToDo
+ 
+* test on different openssl versions
+* support non-rsa keys
+* add support for pubkey sources other than github
+* windows support
+
+# License
+
+Apache 2.0
