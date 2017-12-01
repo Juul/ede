@@ -1,14 +1,28 @@
 #!/bin/bash
 
 
-if [ "$#" -ne "2" ]; then
-  echo "Usage: ede <ssh_pubkey_file or github_username> <file_or_dir_to_encrypt>" >&2
+if [ "$#" -lt "2" ] || [ "$#" -gt "3" ]; then
+  echo "Usage: ede <ssh_pubkey_file or github_username> <file_or_dir_to_encrypt> [output_file.tar.gz]" >&2
+  echo ""
+  echo "  Use - as output file to output to stdout"
+  echo ""
   exit 1
 fi
 
+FINAL_OUT=$(basename $2).encrypted.tar.gz
+if [ "$#" -eq "3" ]; then
+  FINAL_OUT=$3
+else
+  FINAL_OUT=$(basename $2).encrypted.tar.gz
+fi
+
+if [ "$FINAL_OUT" != "-" ] && [ -f "$FINAL_OUT" ]; then
+  echo "Output file $FINAL_OUT already exists" > /dev/stderr
+  exit 1
+fi
 
 if [ ! -f "$1" ]; then
-  echo "No public key by that name. Assuming this is a github user."
+  echo "No public key by that name. Assuming this is a github user." > /dev/stderr
   TMPRAW=$(curl -f "https://github.com/${1}.keys" 2> /dev/null)
   RETVAL=$?
   if [ "$RETVAL" -ne "0" ]; then
@@ -42,6 +56,7 @@ if [ "$?" -ne "0" ]; then
   rm -rf $TMPDIR
   exit $?
 fi
+
 
 OUTFILENAME=$(basename $2).enc
 OUTFILE="${TMPTARDIR}/$OUTFILENAME"
@@ -118,9 +133,12 @@ fi
 echo "--" >> $README
 echo "juul.io" >> $README
 
-FINAL_OUT=$(basename $2).encrypted.tar.gz
+if [ "$FINAL_OUT" == "-" ]; then
+  tar -C $TMPDIR -c -O -z $(basename $TMPTARDIR)
+else
+  tar -C $TMPDIR -c -f $(pwd)/$FINAL_OUT -z $(basename $TMPTARDIR)
+fi
 
-tar -C $TMPDIR -c -f $(pwd)/$FINAL_OUT -z $(basename $TMPTARDIR)
 if [ "$?" -ne "0" ]; then
     rm -rf $TMPDIR
     echo $TMPDIR
