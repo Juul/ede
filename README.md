@@ -1,3 +1,6 @@
+
+# EDE: Everything Decrypted Everywhere
+
 Create an encrypted file using an SSH public key which can be decrypted on any system that has openssl. Encrypted file is a `tar.gz` archive which includes decryption instructions.
 
 Very early state. Only RSA public keys currently supported and only *nix systems. Needs lots more testing and improvement.
