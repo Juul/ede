@@ -1,0 +1,139 @@
+#!/bin/bash
+
+# ToDo
+# 
+# * make it work for non-rsa keys
+# * support encrypting multiple files at once
+# * add support for other pubkey sources than github
+
+
+if [ "$#" -ne "2" ]; then
+  echo "Usage: $0 <ssh_pubkey_file or github_username> <file_or_dir_to_encrypt>" >&2
+  exit 1
+fi
+
+
+if [ ! -f "$1" ]; then
+  echo "No public key by that name. Assuming this is a github user."
+  TMPRAW=$(curl -f "https://github.com/${1}.keys" 2> /dev/null)
+  RETVAL=$?
+  if [ "$RETVAL" -ne "0" ]; then
+    if [ "$RETVAL" -eq "22" ]; then
+      echo "Could not find a github user by the name $1" > /dev/stderr
+    fi
+    exit $?
+  fi
+  PUBKEY=$(echo "$TMPRAW" | grep "ssh-" | head -n 1)
+  if [ "${#PUBKEY}" -lt 10 ]; then
+      echo "No public key found for github user $1" > /dev/stderr
+      exit 1
+  fi
+else
+  PUBKEY=$(cat $1)
+fi
+
+TMPDIR=$(mktemp -d)
+TMPTARDIR=${TMPDIR}/$(basename $2)
+mkdir $TMPTARDIR
+if [ "$?" -ne "0" ]; then
+  exit $?
+fi
+
+TMPKEY="${TMPDIR}/insecure.key"
+
+touch $TMPKEY
+chmod 600 $TMPKEY
+openssl rand -out $TMPKEY 192
+if [ "$?" -ne "0" ]; then
+  rm -rf $TMPDIR
+  exit $?
+fi
+
+OUTFILENAME=$(basename $2).enc
+OUTFILE="${TMPTARDIR}/$OUTFILENAME"
+OUTKEYFILE=secret.key
+OUTKEY="${TMPTARDIR}/$OUTKEYFILE"
+MYOUTKEYFILE=sender.key
+MYOUTKEY="${TMPTARDIR}/$MYOUTKEYFILE"
+
+echo $PUBKEY > ${TMPDIR}/pubkey
+ssh-keygen -e -f ${TMPDIR}/pubkey -m PKCS8 | openssl rsautl -encrypt -pubin -inkey /dev/stdin -in $TMPKEY -out $OUTKEY
+if [ "$?" -ne "0" ]; then
+  rm -rf $TMPDIR
+  exit $?
+fi
+
+if [ -f ~/.ssh/id_rsa.pub ]; then
+  ssh-keygen -e -f ~/.ssh/id_rsa.pub -m PKCS8 | openssl rsautl -encrypt -pubin -inkey /dev/stdin -in $TMPKEY -out $MYOUTKEY
+    if [ "$?" -ne "0" ]; then
+      rm -rf $TMPDIR
+      exit $?
+    fi
+fi
+
+INFILE=$2
+
+if [ -d $INFILE ]; then
+   ISDIR=true
+   NEWINFILE=${TMPDIR}/$(basename $2).tar
+   tar -cf $NEWINFILE $INFILE
+   if [ "$?" -ne "0" ]; then
+      echo "Could not create tar file from directory" > /dev/stderr
+      rm -rf $TMPDIR
+      exit $?
+   fi
+   INFILE=$NEWINFILE
+fi
+
+openssl aes-256-cbc -in $INFILE -out $OUTFILE -pass file:$TMPKEY
+if [ "$?" -ne "0" ]; then
+  rm -rf $TMPDIR
+  exit $?
+fi
+
+rm $TMPKEY
+
+README="${TMPTARDIR}/README"
+
+echo "To decrypt this file run the following command:" > $README
+echo "" >> $README
+if [ "$ISDIR" == "true" ]; then
+   echo "  openssl rsautl -decrypt -ssl -inkey ~/.ssh/id_rsa -in $OUTKEYFILE -out /dev/stdout | openssl aes-256-cbc -d -in $OUTFILENAME -pass file:/dev/stdin -out /dev/stdout | tar -x && echo 'Decrypted directory saved as: ./${OUTFILENAME::-4}/'" >> $README
+else
+   echo "  openssl rsautl -decrypt -ssl -inkey ~/.ssh/id_rsa -in $OUTKEYFILE -out /dev/stdout | openssl aes-256-cbc -d -in $OUTFILENAME -pass file:/dev/stdin -out ${OUTFILENAME::-4} && echo 'Decrypted file saved as: ./${OUTFILENAME::-4}'" >> $README
+fi
+echo "" >> $README
+echo "This is the ssh public key that was used to encrypt the file:" >> $README
+echo "" >> $README
+echo $PUBKEY >> $README
+echo "" >> $README
+if [ -f ~/.ssh/id_rsa.pub ]; then
+  echo "The person who encrypted this file is also able to decrypt it with the command:" >> $README
+  echo "" >> $README
+  if [ "$ISDIR" == "true" ]; then
+    echo "  openssl rsautl -decrypt -ssl -inkey ~/.ssh/id_rsa -in $MYOUTKEYFILE -out /dev/stdout | openssl aes-256-cbc -d -in $OUTFILENAME -pass file:/dev/stdin -out ${OUTFILENAME::-4} && echo 'Decrypted to directory saved as: ./${OUTFILENAME::-4}/'" >> $README
+  else
+    echo "  openssl rsautl -decrypt -ssl -inkey ~/.ssh/id_rsa -in $MYOUTKEYFILE -out /dev/stdout | openssl aes-256-cbc -d -in $OUTFILENAME -pass file:/dev/stdin -out /dev/stdout | tar -x && echo 'Decrypted file saves as: ./${OUTFILENAME::-4}'" >> $README  
+  fi
+  echo "" >> $README
+  echo "and this is the public key they used for this secondary encryption:" >> $README
+  echo "" >> $README
+  cat ~/.ssh/id_rsa.pub >> $README
+  echo "" >> $README
+fi
+echo "--" >> $README
+echo "juul.io" >> $README
+
+FINAL_OUT=$(basename $2).encrypted.tar.gz
+
+tar -C $TMPDIR -c -f $(pwd)/$FINAL_OUT -z $(basename $TMPTARDIR)
+if [ "$?" -ne "0" ]; then
+    rm -rf $TMPDIR
+    echo $TMPDIR
+  exit $?
+fi
+
+rm -rf $TMPDIR
+
+echo "Encrypted to: $FINAL_OUT"
+

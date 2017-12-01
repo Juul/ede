@@ -1,0 +1,33 @@
+{
+  "name": "ede",
+  "description": "create encrypted files that anyone can decrypt",
+  "version": "0.0.1",
+  "bin": {
+    "gulp": "./ede"
+  },
+  "files": [
+    "ede"
+  ],
+  "tags": [
+    "encrypt",
+    "decrypt",
+    "shell",
+    "openssl",
+    "ssh",
+    "key",
+    "universal"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/juul/ede.git"
+  },
+  "readmeFilename": "README.md",
+  "author": {
+    "name": "Marc Juul",
+    "email": "npm@juul.io"
+  },
+  "bugs": {
+    "url": "https://github.com/juul/ede/issues"
+  }
+}
