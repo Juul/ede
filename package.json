@@ -1,9 +1,9 @@
 {
   "name": "ede",
   "description": "create encrypted files that anyone can decrypt",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "bin": {
-    "gulp": "./ede"
+    "ede": "./ede"
   },
   "files": [
     "ede"
