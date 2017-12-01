@@ -31,9 +31,9 @@ if [ ! -f "$1" ]; then
     fi
     exit $?
   fi
-  PUBKEY=$(echo "$TMPRAW" | grep "ssh-" | head -n 1)
+  PUBKEY=$(echo "$TMPRAW" | grep "ssh-rsa" | head -n 1)
   if [ "${#PUBKEY}" -lt 10 ]; then
-      echo "No public key found for github user $1" > /dev/stderr
+      echo "No rsa public key found for github user $1" > /dev/stderr
       exit 1
   fi
 else

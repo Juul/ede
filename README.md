@@ -40,8 +40,9 @@ less mydir/README # follow readme instructions
 * test on different openssl versions
 * support non-rsa keys
 * add support for pubkey sources other than github
-* include a copy of ede with every ede-generated tar-ball
+* include a copy of ede with every ede-generated tarball
 * curl/wget installation instructions
+* ede decryption by auto-detecting that the input file is an ede-generated tarball
 * `./ede --update` feature
 * windows support
 
