@@ -10,7 +10,9 @@ Very early state. Only RSA public keys currently supported and only *nix systems
 ## Encryption
 
 ```
-ede <ssh_pubkey_file or github_username> <file_or_dir_to_encrypt>
+ede <ssh_pubkey_file or github_username> <file_or_dir_to_encrypt> [output_file]
+
+  Use - as output file to output to stdout
 ```
 
 E.g:
@@ -38,6 +40,9 @@ less mydir/README # follow readme instructions
 * test on different openssl versions
 * support non-rsa keys
 * add support for pubkey sources other than github
+* include a copy of ede with every ede-generated tar-ball
+* curl/wget installation instructions
+* `./ede --update` feature
 * windows support
 
 # License
