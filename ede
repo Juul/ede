@@ -130,6 +130,12 @@ if [ -f ~/.ssh/id_rsa.pub ]; then
   cat ~/.ssh/id_rsa.pub >> $README
   echo "" >> $README
 fi
+echo "This file was encrypted with ede. If you have npm you can install ede using:" >> $README
+echo "" >> $README
+echo "  npm install -g ede" >> $README
+echo "" >> $README
+echo "or get the source code at: https://github.com/juul/ede" >> $README
+echo "" >> $README
 echo "--" >> $README
 echo "juul.io" >> $README
 
